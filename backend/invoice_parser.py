@@ -2,6 +2,7 @@ import re
 import pdfplumber
 from typing import Dict, List
 from io import BytesIO
+from xml_parser import extract_xml_invoice
 
 
 def extract_invoice_data(pdf_file: BytesIO, filename: str) -> Dict[str, str]:
@@ -243,7 +244,10 @@ def format_amount(amount: str) -> str:
 def process_multiple_pdfs(files: List[tuple]) -> List[Dict[str, str]]:
     results = []
     for filename, file_content in files:
-        pdf_bytes = BytesIO(file_content)
-        invoice_data = extract_invoice_data(pdf_bytes, filename)
+        if filename.lower().endswith('.xml'):
+            invoice_data = extract_xml_invoice(file_content, filename)
+        else:
+            pdf_bytes = BytesIO(file_content)
+            invoice_data = extract_invoice_data(pdf_bytes, filename)
         results.append(invoice_data)
     return results

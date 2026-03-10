@@ -1,7 +1,7 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
-from typing import List
+from typing import List, Optional
 import pandas as pd
 from io import BytesIO
 from invoice_parser import process_multiple_pdfs
@@ -39,27 +39,44 @@ async def root():
 
 
 @app.post("/api/convert")
-async def convert_pdfs_to_excel(files: List[UploadFile] = File(...)):
+async def convert_pdfs_to_excel(
+    files: List[UploadFile] = File(...),
+    existing_excel: Optional[UploadFile] = File(default=None),
+):
     if not files:
         raise HTTPException(status_code=400, detail="No files uploaded")
 
-    pdf_files = []
+    invoice_files = []
     for file in files:
-        if not file.filename.lower().endswith('.pdf'):
+        ext = file.filename.lower().rsplit('.', 1)[-1]
+        if ext not in ('pdf', 'xml'):
             raise HTTPException(
                 status_code=400,
-                detail=f"Invalid file type: {file.filename}. Only PDF files are allowed."
+                detail=f"Geçersiz dosya: {file.filename}. Sadece PDF ve XML desteklenmektedir."
             )
         content = await file.read()
-        pdf_files.append((file.filename, content))
+        invoice_files.append((file.filename, content))
 
     try:
-        results = process_multiple_pdfs(pdf_files)
+        results = process_multiple_pdfs(invoice_files)
 
         if not results:
-            raise HTTPException(status_code=500, detail="Failed to process PDF files")
+            raise HTTPException(status_code=500, detail="Dosyalar işlenemedi")
 
-        df = pd.DataFrame(results)
+        df_new = pd.DataFrame(results)
+
+        # Mevcut Excel varsa birleştir
+        if existing_excel is not None:
+            xlsx_content = await existing_excel.read()
+            df_existing = pd.read_excel(BytesIO(xlsx_content))
+            # TOPLAM satırını çıkar
+            df_existing = df_existing[df_existing.iloc[:, 0] != "TOPLAM"]
+            df = pd.concat([df_existing, df_new], ignore_index=True)
+            # Fatura No'ya göre duplicate temizle (son gelen kazanır)
+            if "Fatura No" in df.columns:
+                df = df.drop_duplicates(subset=["Fatura No"], keep="last")
+        else:
+            df = df_new
 
         column_order = [
             "Dosya Adı",
