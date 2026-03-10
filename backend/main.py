@@ -13,19 +13,10 @@ from auth import verify_clerk_jwt, get_credits, set_credits
 
 app = FastAPI(title="Fatura2Excel API", version="2.0.0")
 
-frontend_url = os.getenv("FRONTEND_URL", "")
-
-allowed_origins = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-]
-if frontend_url:
-    allowed_origins.append(frontend_url)
-
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=allowed_origins,
-    allow_credentials=True,
+    allow_origins=["*"],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
