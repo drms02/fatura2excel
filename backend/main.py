@@ -5,6 +5,8 @@ from typing import List
 import pandas as pd
 from io import BytesIO
 from invoice_parser import process_multiple_pdfs
+from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+from openpyxl.utils import get_column_letter
 import os
 
 app = FastAPI(title="Fatura2Excel API", version="1.0.0")
@@ -76,16 +78,78 @@ async def convert_pdfs_to_excel(files: List[UploadFile] = File(...)):
         ]
         df = df[column_order]
 
+        numeric_cols = ["Matrah", "KDV", "Toplam"]
+
         excel_buffer = BytesIO()
         with pd.ExcelWriter(excel_buffer, engine='openpyxl') as writer:
             df.to_excel(writer, index=False, sheet_name='Faturalar')
-            worksheet = writer.sheets['Faturalar']
-            for idx, col in enumerate(df.columns):
-                max_length = max(
-                    df[col].astype(str).map(len).max(),
-                    len(col)
-                ) + 2
-                worksheet.column_dimensions[chr(65 + idx)].width = max_length
+            ws = writer.sheets['Faturalar']
+
+            # --- Başlık satırı stili ---
+            header_fill = PatternFill("solid", fgColor="1F3864")  # koyu lacivert
+            header_font = Font(bold=True, color="FFFFFF", name="Arial", size=10)
+            for cell in ws[1]:
+                cell.fill = header_fill
+                cell.font = header_font
+                cell.alignment = Alignment(horizontal="center", vertical="center")
+
+            # --- Veri satırları: "Okunamadı" hücrelerini kırmızıya boya ---
+            red_fill = PatternFill("solid", fgColor="FFD7D7")
+            red_font = Font(color="CC0000", italic=True, name="Arial", size=10)
+            normal_font = Font(name="Arial", size=10)
+
+            for row in ws.iter_rows(min_row=2, max_row=len(df) + 1):
+                for cell in row:
+                    if cell.value == "Okunamadı":
+                        cell.fill = red_fill
+                        cell.font = red_font
+                    else:
+                        cell.font = normal_font
+
+            # --- TOPLAM satırı ---
+            total_row = len(df) + 2  # 1 header + N data + 1 boşluk yok, direkt altına
+
+            # Toplam etiket
+            ws.cell(row=total_row, column=1).value = "TOPLAM"
+            ws.cell(row=total_row, column=1).font = Font(bold=True, name="Arial", size=10, color="FFFFFF")
+            ws.cell(row=total_row, column=1).alignment = Alignment(horizontal="center")
+
+            total_fill = PatternFill("solid", fgColor="2E7D32")  # koyu yeşil
+            thin_border = Border(
+                top=Side(style="medium", color="1A5276"),
+                bottom=Side(style="medium", color="1A5276"),
+            )
+
+            for col_idx, col_name in enumerate(column_order, start=1):
+                cell = ws.cell(row=total_row, column=col_idx)
+                cell.fill = total_fill
+                cell.border = thin_border
+                cell.font = Font(bold=True, name="Arial", size=10, color="FFFFFF")
+                cell.alignment = Alignment(horizontal="center")
+
+                if col_name in numeric_cols:
+                    # "Okunamadı" değerlerini atlayarak topla
+                    col_values = df[col_name]
+                    total = 0.0
+                    for v in col_values:
+                        try:
+                            total += float(v)
+                        except (ValueError, TypeError):
+                            pass
+                    cell.value = round(total, 2)
+                    cell.number_format = '#,##0.00'
+
+            # --- Kolon genişlikleri ---
+            for col_idx, col_name in enumerate(column_order, start=1):
+                col_letter = get_column_letter(col_idx)
+                max_len = max(
+                    df[col_name].astype(str).map(len).max(),
+                    len(col_name)
+                ) + 3
+                ws.column_dimensions[col_letter].width = min(max_len, 40)
+
+            # Satır yüksekliği: başlık
+            ws.row_dimensions[1].height = 20
 
         excel_buffer.seek(0)
 
