@@ -52,26 +52,30 @@ def extract_invoice_data(pdf_file: BytesIO, filename: str) -> Dict[str, str]:
 
 
 def extract_date(text: str) -> str:
+    # Handle both "DD.MM.YYYY" and "DD / MM / YYYY" (with optional spaces around separator)
+    date_pat = r'(\d{2}\s*[-/\.]\s*\d{2}\s*[-/\.]\s*\d{4})'
     patterns = [
-        r'Fatura\s*Tarihi[\s:]*(\d{2}[-/\.]\d{2}[-/\.]\d{4})',
-        r'(?:Düzenlenme|Düzenleme)\s*Tarihi[\s:]*(\d{2}[-/\.]\d{2}[-/\.]\d{4})',
-        r'Tarih[\s:]*(\d{2}[-/\.]\d{2}[-/\.]\d{4})',
+        r'(?:FATURA\s*TAR[İI]H[İI]|Fatura\s*Tarihi)\s*:?\s*' + date_pat,
+        r'(?:Düzenlenme|Düzenleme)\s*Tarihi\s*:?\s*' + date_pat,
+        r'Tarih\s*:?\s*' + date_pat,
     ]
     for pattern in patterns:
         match = re.search(pattern, text, re.IGNORECASE)
         if match:
-            return match.group(1)
-    match = re.search(r'(\d{2}[-/\.]\d{2}[-/\.]\d{4})', text)
+            return match.group(1).strip()
+    # Fallback: any date-like pattern
+    match = re.search(date_pat, text)
     if match:
-        return match.group(1)
+        return match.group(1).strip()
     return "Okunamadı"
 
 
 def extract_invoice_number(text: str) -> str:
     patterns = [
-        r'Fatura\s*No[\s:]*([A-Z]{2,3}\d{14,15})',
-        r'Fatura\s*No[\s:]*([A-Z]{3}\d{13})',
-        r'Fatura\s*No[\s:]*([A-Z0-9]{3,5}\d{10,15})',
+        r'(?:FATURA\s*NO|Fatura\s*No)\s*:?\s*([A-Z]{2,3}\d{14,15})',
+        r'(?:FATURA\s*NO|Fatura\s*No)\s*:?\s*([A-Z]{3}\d{13})',
+        r'(?:FATURA\s*NO|Fatura\s*No)\s*:?\s*([A-Z0-9]{3,5}\d{10,15})',
+        r'Belge\s*No\s*:?\s*([A-Z0-9]{2,5}\d{10,15})',
     ]
     for pattern in patterns:
         match = re.search(pattern, text, re.IGNORECASE)
@@ -81,10 +85,9 @@ def extract_invoice_number(text: str) -> str:
 
 
 def extract_invoice_type(text: str) -> str:
-    match = re.search(r'Fatura\s*Tipi[\s:]*([A-ZÇĞİÖŞÜa-zçğıöşü]+)', text, re.IGNORECASE)
+    match = re.search(r'Fatura\s*Tipi\s*:?\s*([A-ZÇĞİÖŞÜa-zçğıöşü]+)', text, re.IGNORECASE)
     if match:
         val = match.group(1).strip().upper()
-        # Türkçeleştir
         mapping = {"SATIS": "SATIŞ", "IADE": "İADE", "TEVKIFAT": "TEVKİFAT"}
         return mapping.get(val, val)
     return "Okunamadı"
@@ -92,8 +95,10 @@ def extract_invoice_type(text: str) -> str:
 
 def extract_seller_name(lines: list) -> str:
     """İlk anlamlı satır satıcı adıdır."""
-    skip_keywords = ['tel:', 'faks:', 'web sitesi:', 'vergi', 'mersis', 'ticaret sicil',
-                     'senaryo:', 'e-arşiv', 'özelleştirme']
+    skip_keywords = [
+        'tel:', 'faks:', 'web sitesi:', 'vergi', 'mersis', 'ticaret sicil',
+        'senaryo:', 'e-arşiv', 'özelleştirme', 'www.', 'adresi:', 'telefon',
+    ]
     for line in lines:
         line = line.strip()
         if not line:
@@ -112,8 +117,11 @@ def extract_seller_name(lines: list) -> str:
 def extract_seller_vkn(text: str) -> str:
     """Satıcıya ait Vergi Numarası (10 hane)"""
     patterns = [
-        r'Vergi\s*Numaras[ıi][\s:]*(\d{10})',
-        r'V\.K\.N\.?[\s:]*(\d{10})',
+        r'Vergi\s*Numaras[ıi]\s*:?\s*(\d{10})\b',
+        r'V\.K\.N\.?\s*:?\s*(\d{10})\b',
+        # "Vergi No :7330638410" formatı — 10 haneli ilk eşleşme satıcıya ait
+        r'Vergi\s*No\s*:?\s*(\d{10})\b',
+        r'\bVKN\s*:?\s*(\d{10})\b',
     ]
     for pattern in patterns:
         match = re.search(pattern, text, re.IGNORECASE)
@@ -125,9 +133,13 @@ def extract_seller_vkn(text: str) -> str:
 def extract_buyer_tax_id(text: str) -> str:
     """Alıcıya ait TCKN (11 hane) veya VKN (10 hane)"""
     patterns = [
-        r'Kimlik\s*Numaras[ıi][\s:]*(\d{11})',
-        r'(?:TC|TCKN)[\s:]*(?:Kimlik|No|Numaras[ıi])?[\s:]*(\d{11})',
-        r'T\.C\.?\s*(?:Kimlik)?\s*No[\s:]*(\d{11})',
+        r'Kimlik\s*Numaras[ıi]\s*:?\s*(\d{11})',
+        r'(?:TC|TCKN)\s*:?\s*(?:Kimlik|No|Numaras[ıi])?\s*:?\s*(\d{11})',
+        r'T\.C\.?\s*(?:Kimlik)?\s*No\s*:?\s*(\d{11})',
+        # "TCKN: 11111111111" formatı (stwwpa16)
+        r'\bTCKN\s*:?\s*(\d{11})',
+        # "Vergi No :11111111111" — 11 haneli = TCKN
+        r'Vergi\s*No\s*:?\s*(\d{11})\b',
         r'Alıcı[^\n]*?Vergi[^\n]*?(\d{10})',
     ]
     for pattern in patterns:
@@ -139,9 +151,13 @@ def extract_buyer_tax_id(text: str) -> str:
 
 def extract_customer_name(text: str) -> str:
     patterns = [
-        r'Say[ıi]n[\s:]*([A-ZÇĞİÖŞÜ][^\n]{3,80}?)(?:\s+(?:Fatura|Vergi|VKN|Adres|E-Posta|Tel))',
+        # "Sayın Adı Soyadı" formatı
+        r'SAY[Iiİı]N\s+([A-ZÇĞİÖŞÜ][A-Za-zÇĞİÖŞÜçğıöşü\s\.]+?)(?:\n|Vergi|VKN|TCKN|E-Posta|Adres)',
+        r'Say[ıi]n\s*:?\s*([A-ZÇĞİÖŞÜ][^\n]{3,80}?)(?:\s+(?:Fatura|Vergi|VKN|Adres|E-Posta|Tel))',
         r'^([A-ZÇĞİÖŞÜ][a-zA-ZÇĞİÖŞÜçğıöşü\s\.]{5,60}?)\s+Fatura\s+No\s*:',
-        r'(?:Müşteri|ALICI)\s*(?:Adı|Ünvanı)?[\s:]*([A-ZÇĞİÖŞÜ][A-Za-zÇĞİÖŞÜçğıöşü\s\.&\-]{3,80}?)(?:\s+(?:Vergi|VKN|Adres))',
+        r'(?:Müşteri|ALICI)\s*(?:Adı|Ünvanı)?\s*:?\s*([A-ZÇĞİÖŞÜ][A-Za-zÇĞİÖŞÜçğıöşü\s\.&\-]{3,80}?)(?:\s+(?:Vergi|VKN|Adres))',
+        # "FATURA NO : XXX\nMuhammed Ensar Durmuş" formatı (ad fatura no sonraki satırda)
+        r'(?:FATURA\s*NO|Fatura\s*No)\s*:?\s*[A-Z0-9]+\s*\n([A-ZÇĞİÖŞÜ][^\n]{3,60})',
     ]
     for pattern in patterns:
         match = re.search(pattern, text, re.IGNORECASE | re.MULTILINE)
@@ -165,8 +181,11 @@ def extract_currency(text: str) -> str:
 
 def extract_subtotal(text: str) -> str:
     patterns = [
+        # KDV Matrahı (vergi matrahı — indirim sonrası) — önce ara
+        r'KDV\s*Matrah[ıi]\s*(\d{1,3}(?:[.,]\d{3})*[.,]\d{2})',
+        r'Matrah[ıi]?\s*:?\s*(\d{1,3}(?:[.,]\d{3})*[.,]\d{2})',
+        # Mal/Hizmet toplam (brüt, indirim öncesi) — son çare
         r'Mal\s*/?\s*Hizmet\s*Toplam\s*Tutar[ıi][\s:]*(\d{1,3}(?:[.,]\d{3})*[.,]\d{2})',
-        r'Matrah[\s:]*(\d{1,3}(?:[.,]\d{3})*[.,]\d{2})',
     ]
     for pattern in patterns:
         match = re.search(pattern, text, re.IGNORECASE)
@@ -177,17 +196,22 @@ def extract_subtotal(text: str) -> str:
 
 def extract_tax_rate(text: str) -> str:
     """KDV oranı — tek veya çok oranlı faturalarda tümünü yakalar."""
-    rates = re.findall(r'Hesaplanan\s*KDV\s*\((%\d+|\d+%)\)', text, re.IGNORECASE)
+    rates = re.findall(r'Hesaplanan\s*KDV\s*\((%[\d.]+|[\d.]+%)\)', text, re.IGNORECASE)
     if not rates:
-        rates = re.findall(r'KDV\s*\((%\d+|\d+%)\)', text, re.IGNORECASE)
+        rates = re.findall(r'KDV\s*\((%[\d.]+|[\d.]+%)\)', text, re.IGNORECASE)
     if not rates:
         rates = re.findall(r'KDV\s+(%\d{1,2}|\d{1,2}%)', text, re.IGNORECASE)
+    if not rates:
+        # "KDV % 20 33,33" formatı
+        rates = [f"%{r}" for r in re.findall(r'\bKDV\s*%\s*(\d{1,2})\b', text, re.IGNORECASE)]
     if rates:
-        # Normalize: hepsi %XX formatına çek, tekrarları kaldır
+        # Normalize: hepsi %XX formatına çek, ondalık kısmı at, tekrarları kaldır
         normalized = []
         seen = set()
         for r in rates:
             r = r if r.startswith('%') else '%' + r
+            # %10.00 → %10
+            r = re.sub(r'(\d+)\.\d+', r'\1', r)
             if r not in seen:
                 seen.add(r)
                 normalized.append(r)
@@ -199,15 +223,26 @@ def extract_tax(text: str) -> str:
     """KDV tutarı — çok oranlı faturalarda tüm KDV'leri toplar."""
     # Önce genel toplam KDV satırını ara
     total_match = re.search(
-        r'(?:Toplam\s*KDV|KDV\s*Tutar[ıi])[\s:]*(\d{1,3}(?:[.,]\d{3})*[.,]\d{2})',
+        r'(?:Toplam\s*KDV|KDV\s*Tutar[ıi])\s*:?\s*(\d{1,3}(?:[.,]\d{3})*[.,]\d{2})',
         text, re.IGNORECASE
     )
     if total_match:
         return format_amount(total_match.group(1))
 
-    # Çok oranlı: tüm "Hesaplanan KDV(...): X,XX" satırlarını topla
+    # "Hesaplanan KDV(%20) 33,33" formatı
     amounts = re.findall(
-        r'Hesaplanan\s*KDV\s*(?:\([^)]*\))?\s*[\s:]*(\d{1,3}(?:[.,]\d{3})*[.,]\d{2})',
+        r'Hesaplanan\s*KDV\s*(?:\([^)]*\))?\s*:?\s*(\d{1,3}(?:[.,]\d{3})*[.,]\d{2})',
+        text, re.IGNORECASE
+    )
+    if amounts:
+        total = sum(
+            float(a.replace('.', '').replace(',', '.')) for a in amounts
+        )
+        return f"{total:.2f}"
+
+    # "KDV % 20 33,33" formatı (81E8E50E tipi)
+    amounts = re.findall(
+        r'\bKDV\s*%\s*\d+\s+(\d{1,3}(?:[.,]\d{3})*[.,]\d{2})',
         text, re.IGNORECASE
     )
     if amounts:
@@ -221,9 +256,9 @@ def extract_tax(text: str) -> str:
 
 def extract_total(text: str) -> str:
     patterns = [
-        r'[Öö]denecek\s*Tutar[\s:]*(\d{1,3}(?:[.,]\d{3})*[.,]\d{2})',
-        r'Vergiler\s*Dahil\s*Toplam\s*Tutar[\s:]*(\d{1,3}(?:[.,]\d{3})*[.,]\d{2})',
-        r'(?:Genel|Büyük)\s*Toplam[\s:]*(\d{1,3}(?:[.,]\d{3})*[.,]\d{2})',
+        r'[Öö]denecek\s*Tutar\s*:?\s*(\d{1,3}(?:[.,]\d{3})*[.,]\d{2})',
+        r'Vergiler\s*Dahil\s*Toplam\s*Tutar\s*:?\s*(\d{1,3}(?:[.,]\d{3})*[.,]\d{2})',
+        r'(?:Genel|Büyük)\s*Toplam\s*:?\s*(\d{1,3}(?:[.,]\d{3})*[.,]\d{2})',
     ]
     for pattern in patterns:
         match = re.search(pattern, text, re.IGNORECASE)

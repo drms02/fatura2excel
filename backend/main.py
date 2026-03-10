@@ -72,11 +72,12 @@ async def convert_pdfs_to_excel(
             # TOPLAM satırını çıkar
             df_existing = df_existing[df_existing.iloc[:, 0] != "TOPLAM"]
             df = pd.concat([df_existing, df_new], ignore_index=True)
-            # Fatura No'ya göre duplicate temizle (son gelen kazanır)
-            if "Fatura No" in df.columns:
-                df = df.drop_duplicates(subset=["Fatura No"], keep="last")
         else:
             df = df_new
+
+        # Fatura No'ya göre duplicate temizle (her zaman çalışır)
+        if "Fatura No" in df.columns:
+            df = df.drop_duplicates(subset=["Fatura No"], keep="last")
 
         column_order = [
             "Dosya Adı",
