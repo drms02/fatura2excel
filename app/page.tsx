@@ -98,7 +98,7 @@ export default function Home() {
     if (files.length === 0) return;
 
     // Kredi kontrolü (frontend tarafı)
-    if (credits !== null && credits <= 0) {
+    if (credits !== null && credits < files.length) {
       setShowPaymentModal(true);
       return;
     }
@@ -192,7 +192,7 @@ export default function Home() {
       );
     }
 
-    if (credits !== null && credits <= 0) {
+    if (credits !== null && files.length > 0 && credits < files.length) {
       return (
         <Button
           onClick={() => setShowPaymentModal(true)}
@@ -200,7 +200,7 @@ export default function Home() {
           className="px-8 bg-amber-600 hover:bg-amber-700"
         >
           <Coins className="mr-2 h-5 w-5" />
-          Kredi Satın Al
+          Yetersiz Kredi — Satın Al
         </Button>
       );
     }
@@ -278,15 +278,29 @@ export default function Home() {
                 <p className="text-sm text-slate-500 mt-2">
                   GİB e-Arşiv PDF ve e-Fatura XML dosyaları desteklenmektedir
                 </p>
+                <p className="text-xs text-slate-400 mt-1">
+                  Her dosya için 1 kredi kullanılır
+                </p>
               </div>
             </div>
 
             {/* Seçilen dosyalar */}
             {files.length > 0 && (
               <div className="mt-6 space-y-2">
-                <h3 className="font-semibold text-slate-900 mb-3">
-                  Fatura Dosyaları ({files.length})
-                </h3>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="font-semibold text-slate-900">
+                    Fatura Dosyaları ({files.length})
+                  </h3>
+                  {isSignedIn && credits !== null && (
+                    <span className={`text-sm font-medium px-2 py-1 rounded-full ${
+                      credits >= files.length
+                        ? 'bg-green-100 text-green-700'
+                        : 'bg-red-100 text-red-700'
+                    }`}>
+                      {files.length} kredi kullanılacak (kalan: {credits})
+                    </span>
+                  )}
+                </div>
                 {files.map(({ file, id }) => (
                   <div key={id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
                     <div className="flex items-center space-x-3">

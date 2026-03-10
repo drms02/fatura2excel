@@ -69,15 +69,16 @@ async def convert_pdfs_to_excel(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Kredi sorgulanamadı: {e}")
 
-    if credits <= 0:
-        raise HTTPException(
-            status_code=402,
-            detail="Krediniz yetersiz. Devam etmek için paket satın alın."
-        )
-
     # 3. Dosya doğrulama
     if not files:
         raise HTTPException(status_code=400, detail="Dosya yüklenmedi")
+
+    file_count = len(files)
+    if credits < file_count:
+        raise HTTPException(
+            status_code=402,
+            detail=f"Krediniz yetersiz. {file_count} dosya için {file_count} kredi gerekiyor, mevcut: {credits}."
+        )
 
     invoice_files = []
     for file in files:
@@ -183,7 +184,7 @@ async def convert_pdfs_to_excel(
 
         # 5. Krediyi azalt (başarılı dönüşüm sonrası)
         try:
-            await set_credits(user_id, credits - 1)
+            await set_credits(user_id, credits - file_count)
         except Exception:
             pass  # Kredi azaltma hatası dönüştürmeyi engellemez
 
