@@ -8,4 +8,8 @@ services:
     envVars:
       - key: FRONTEND_URL
         value: https://fatura2excel.vercel.app
+      - key: CLERK_SECRET_KEY
+        sync: false
+      - key: CLERK_DOMAIN
+        sync: false
 
