@@ -1,13 +1,10 @@
 import re
 import pdfplumber
-from typing import Dict, List, Optional
+from typing import Dict, List
 from io import BytesIO
 
+
 def extract_invoice_data(pdf_file: BytesIO, filename: str) -> Dict[str, str]:
-    """
-    Extract invoice data from Turkish GİB E-Arşiv PDF.
-    Returns a dictionary with all extracted fields.
-    """
     result = {
         "Dosya Adı": filename,
         "Fatura Tarihi": "Okunamadı",
@@ -23,9 +20,9 @@ def extract_invoice_data(pdf_file: BytesIO, filename: str) -> Dict[str, str]:
         with pdfplumber.open(pdf_file) as pdf:
             full_text = ""
             for page in pdf.pages:
-                full_text += page.extract_text() + "\n"
-
-            full_text = full_text.replace('\n', ' ').replace('  ', ' ')
+                text = page.extract_text()
+                if text:
+                    full_text += text + "\n"
 
             result["Fatura Tarihi"] = extract_date(full_text)
             result["Fatura No"] = extract_invoice_number(full_text)
@@ -42,91 +39,90 @@ def extract_invoice_data(pdf_file: BytesIO, filename: str) -> Dict[str, str]:
 
 
 def extract_date(text: str) -> str:
-    """Extract invoice date (Fatura Tarihi)"""
     patterns = [
         r'Fatura\s*Tarihi[\s:]*(\d{2}[-/\.]\d{2}[-/\.]\d{4})',
+        r'(?:Düzenlenme|Düzenleme)\s*Tarihi[\s:]*(\d{2}[-/\.]\d{2}[-/\.]\d{4})',
         r'Tarih[\s:]*(\d{2}[-/\.]\d{2}[-/\.]\d{4})',
-        r'(?:Düzenlenme|Düzenleme)\s*Tarihi[\s:]*(\d{2}[-/\.]\d{2}[-/\.]\d{4})'
     ]
-
     for pattern in patterns:
         match = re.search(pattern, text, re.IGNORECASE)
         if match:
             return match.group(1)
 
-    general_date = re.search(r'(\d{2}[-/\.]\d{2}[-/\.]\d{4})', text)
-    if general_date:
-        return general_date.group(1)
+    # fallback: ilk tarihi al
+    match = re.search(r'(\d{2}[-/\.]\d{2}[-/\.]\d{4})', text)
+    if match:
+        return match.group(1)
 
     return "Okunamadı"
 
 
 def extract_invoice_number(text: str) -> str:
-    """Extract invoice number (Fatura No) - 3 letters + 13 digits"""
     patterns = [
-        r'Fatura\s*(?:No|Numarası)[\s:]*([A-Z]{3}\d{13})',
-        r'(?:Ettn|ETTN)[\s:]*([A-Z0-9-]{36})',
-        r'([A-Z]{3}\d{13})',
-        r'Seri\s*(?:No|:)\s*([A-Z]{3}).*?(\d{8,13})'
+        # SA42026000275539 gibi: 2-3 harf + 1-2 rakam + 13 rakam toplam 16 karakter
+        r'Fatura\s*No[\s:]*([A-Z]{2,3}\d{14,15})',
+        # Standart: 3 harf + 13 rakam
+        r'Fatura\s*No[\s:]*([A-Z]{3}\d{13})',
+        # Genel alfanumerik prefix
+        r'Fatura\s*No[\s:]*([A-Z0-9]{3,5}\d{10,15})',
     ]
-
     for pattern in patterns:
         match = re.search(pattern, text, re.IGNORECASE)
         if match:
-            if len(match.groups()) > 1:
-                return match.group(1) + match.group(2)
             return match.group(1)
 
     return "Okunamadı"
 
 
 def extract_tax_id(text: str) -> str:
-    """Extract tax ID (VKN/TCKN) - 10 or 11 digits"""
+    # Önce müşteri TCKN'sini dene (11 hane, "Kimlik Numarası" yakınında)
     patterns = [
-        r'(?:Vergi|VKN)[\s:]*(?:Kimlik|No|Numarası)?[\s:]*(\d{10})',
-        r'(?:TC|TCKN)[\s:]*(?:Kimlik|No|Numarası)?[\s:]*(\d{11})',
+        r'Kimlik\s*Numaras[ıi][\s:]*(\d{11})',
+        r'(?:TC|TCKN)[\s:]*(?:Kimlik|No|Numaras[ıi])?[\s:]*(\d{11})',
+        r'T\.C\.?\s*(?:Kimlik)?\s*No[\s:]*(\d{11})',
+        # VKN (10 hane) - müşteri vergi no
+        r'(?:Alıcı|Müşteri)[^\n]*?Vergi[^\n]*?(\d{10})',
         r'V\.K\.N\.?[\s:]*(\d{10})',
-        r'T\.C\.?[\s:]*(?:Kimlik)?[\s:]*No[\s:]*(\d{11})'
     ]
-
     for pattern in patterns:
         match = re.search(pattern, text, re.IGNORECASE)
         if match:
             return match.group(1)
 
-    standalone_match = re.search(r'\b(\d{10,11})\b', text)
-    if standalone_match:
-        return standalone_match.group(1)
+    # Fallback: herhangi 10-11 haneli sayı
+    match = re.search(r'\b(\d{10,11})\b', text)
+    if match:
+        return match.group(1)
 
     return "Okunamadı"
 
 
 def extract_customer_name(text: str) -> str:
-    """Extract customer name (Müşteri Adı/Ünvanı)"""
     patterns = [
-        r'Sayın[\s:]*([A-ZÇĞİÖŞÜ][A-ZÇĞİÖŞÜa-zçğıöşü\s\.&-]{3,100}?)(?:\s+(?:Vergi|VKN|Adres|Address))',
-        r'(?:Müşteri|ALICI)[\s:]*(?:Adı|Ünvanı)?[\s:]*([A-ZÇĞİÖŞÜ][A-ZÇĞİÖŞÜa-zçğıöşü\s\.&-]{3,100}?)(?:\s+(?:Vergi|VKN|Adres))',
-        r'To[\s:]*([A-Za-zÇĞİÖŞÜçğıöşü\s\.&-]{3,100}?)(?:\s+(?:Tax|Address|VAT))'
+        # "Sayın" ile başlayan
+        r'Say[ıi]n[\s:]*([A-ZÇĞİÖŞÜ][^\n]{3,80}?)(?:\s+(?:Fatura|Vergi|VKN|Adres|E-Posta|Tel))',
+        # İsim satırı + "Fatura No:" aynı satırda
+        r'^([A-ZÇĞİÖŞÜ][a-zA-ZÇĞİÖŞÜçğıöşü\s\.]{5,60}?)\s+Fatura\s+No\s*:',
+        # "Müşteri" veya "ALICI" etiketi
+        r'(?:Müşteri|ALICI)\s*(?:Adı|Ünvanı)?[\s:]*([A-ZÇĞİÖŞÜ][A-Za-zÇĞİÖŞÜçğıöşü\s\.&\-]{3,80}?)(?:\s+(?:Vergi|VKN|Adres))',
     ]
-
     for pattern in patterns:
-        match = re.search(pattern, text, re.IGNORECASE)
+        match = re.search(pattern, text, re.IGNORECASE | re.MULTILINE)
         if match:
             name = match.group(1).strip()
             name = re.sub(r'\s+', ' ', name)
-            return name
+            if len(name) > 2:
+                return name
 
     return "Okunamadı"
 
 
 def extract_subtotal(text: str) -> str:
-    """Extract subtotal amount (Matrah/Mal Hizmet Toplam Tutarı)"""
     patterns = [
-        r'(?:Mal\s*Hizmet\s*Toplam|Matrah)[\s:]*(?:Tutarı)?[\s:]*(?:TL)?[\s:]*(\d{1,3}(?:[.,]\d{3})*[.,]\d{2})',
-        r'(?:Toplam|Ara\s*Toplam)[\s:]*(?:Tutar)?[\s:]*(\d{1,3}(?:[.,]\d{3})*[.,]\d{2})[\s]*(?:TL)?[\s]*(?=.*KDV)',
-        r'Matrah[\s:]*(\d{1,3}(?:[.,]\d{3})*[.,]\d{2})'
+        # "Mal / Hizmet Toplam Tutarı:" veya "Mal Hizmet Toplam Tutarı:"
+        r'Mal\s*/?\s*Hizmet\s*Toplam\s*Tutar[ıi][\s:]*(\d{1,3}(?:[.,]\d{3})*[.,]\d{2})',
+        r'Matrah[\s:]*(\d{1,3}(?:[.,]\d{3})*[.,]\d{2})',
     ]
-
     for pattern in patterns:
         match = re.search(pattern, text, re.IGNORECASE)
         if match:
@@ -136,13 +132,12 @@ def extract_subtotal(text: str) -> str:
 
 
 def extract_tax(text: str) -> str:
-    """Extract tax amount (Hesaplanan KDV)"""
     patterns = [
-        r'(?:Hesaplanan|Toplam)?\s*KDV[\s:]*(?:Tutarı)?[\s:]*(\d{1,3}(?:[.,]\d{3})*[.,]\d{2})',
-        r'(?:KDV|VAT)[\s:]*(?:\d+%)?[\s:]*(\d{1,3}(?:[.,]\d{3})*[.,]\d{2})',
-        r'(?:KDV|Vergi)\s*Tutarı[\s:]*(\d{1,3}(?:[.,]\d{3})*[.,]\d{2})'
+        # "Hesaplanan KDV(%20):" — parantez içini atla
+        r'Hesaplanan\s*KDV\s*(?:\([^)]*\))?\s*[\s:]*(\d{1,3}(?:[.,]\d{3})*[.,]\d{2})',
+        r'Toplam\s*KDV\s*(?:\([^)]*\))?\s*[\s:]*(\d{1,3}(?:[.,]\d{3})*[.,]\d{2})',
+        r'KDV\s*Tutar[ıi][\s:]*(\d{1,3}(?:[.,]\d{3})*[.,]\d{2})',
     ]
-
     for pattern in patterns:
         match = re.search(pattern, text, re.IGNORECASE)
         if match:
@@ -152,13 +147,11 @@ def extract_tax(text: str) -> str:
 
 
 def extract_total(text: str) -> str:
-    """Extract total amount (Ödenecek Tutar)"""
     patterns = [
-        r'(?:Ödenecek|Vergiler\s*Dahil)[\s:]*(?:Toplam)?[\s:]*(?:Tutar)?[\s:]*(\d{1,3}(?:[.,]\d{3})*[.,]\d{2})',
+        r'[Öö]denecek\s*Tutar[\s:]*(\d{1,3}(?:[.,]\d{3})*[.,]\d{2})',
+        r'Vergiler\s*Dahil\s*Toplam\s*Tutar[\s:]*(\d{1,3}(?:[.,]\d{3})*[.,]\d{2})',
         r'(?:Genel|Büyük)\s*Toplam[\s:]*(\d{1,3}(?:[.,]\d{3})*[.,]\d{2})',
-        r'(?:Grand|Total)\s*(?:Total)?[\s:]*(\d{1,3}(?:[.,]\d{3})*[.,]\d{2})[\s]*TL'
     ]
-
     for pattern in patterns:
         match = re.search(pattern, text, re.IGNORECASE)
         if match:
@@ -168,26 +161,20 @@ def extract_total(text: str) -> str:
 
 
 def format_amount(amount: str) -> str:
-    """Format amount to standard decimal format"""
+    """Türkçe format: 1.999,17 → 1999.17"""
+    amount = amount.strip()
+    # Türkçe: nokta=binlik, virgül=ondalık
     amount = amount.replace('.', '').replace(',', '.')
-
     try:
-        float_amount = float(amount)
-        return f"{float_amount:.2f}"
-    except:
+        return f"{float(amount):.2f}"
+    except Exception:
         return amount
 
 
 def process_multiple_pdfs(files: List[tuple]) -> List[Dict[str, str]]:
-    """
-    Process multiple PDF files and return list of extracted data.
-    files: List of tuples (filename, file_content_bytes)
-    """
     results = []
-
     for filename, file_content in files:
         pdf_bytes = BytesIO(file_content)
         invoice_data = extract_invoice_data(pdf_bytes, filename)
         results.append(invoice_data)
-
     return results
