@@ -63,11 +63,16 @@ async def convert_pdfs_to_excel(files: List[UploadFile] = File(...)):
             "Dosya Adı",
             "Fatura Tarihi",
             "Fatura No",
-            "VKN/TCKN",
-            "Müşteri Adı",
+            "Fatura Tipi",
+            "Satıcı Adı",
+            "Satıcı VKN",
+            "Alıcı Adı",
+            "Alıcı VKN/TCKN",
+            "Para Birimi",
             "Matrah",
+            "KDV Oranı",
             "KDV",
-            "Toplam"
+            "Toplam",
         ]
         df = df[column_order]
 

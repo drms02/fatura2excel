@@ -9,26 +9,38 @@ def extract_invoice_data(pdf_file: BytesIO, filename: str) -> Dict[str, str]:
         "Dosya Adı": filename,
         "Fatura Tarihi": "Okunamadı",
         "Fatura No": "Okunamadı",
-        "VKN/TCKN": "Okunamadı",
-        "Müşteri Adı": "Okunamadı",
+        "Fatura Tipi": "Okunamadı",
+        "Satıcı Adı": "Okunamadı",
+        "Satıcı VKN": "Okunamadı",
+        "Alıcı Adı": "Okunamadı",
+        "Alıcı VKN/TCKN": "Okunamadı",
+        "Para Birimi": "TL",
         "Matrah": "Okunamadı",
+        "KDV Oranı": "Okunamadı",
         "KDV": "Okunamadı",
-        "Toplam": "Okunamadı"
+        "Toplam": "Okunamadı",
     }
 
     try:
         with pdfplumber.open(pdf_file) as pdf:
+            lines = []
             full_text = ""
             for page in pdf.pages:
                 text = page.extract_text()
                 if text:
+                    lines.extend(text.split("\n"))
                     full_text += text + "\n"
 
             result["Fatura Tarihi"] = extract_date(full_text)
             result["Fatura No"] = extract_invoice_number(full_text)
-            result["VKN/TCKN"] = extract_tax_id(full_text)
-            result["Müşteri Adı"] = extract_customer_name(full_text)
+            result["Fatura Tipi"] = extract_invoice_type(full_text)
+            result["Satıcı Adı"] = extract_seller_name(lines)
+            result["Satıcı VKN"] = extract_seller_vkn(full_text)
+            result["Alıcı Adı"] = extract_customer_name(full_text)
+            result["Alıcı VKN/TCKN"] = extract_buyer_tax_id(full_text)
+            result["Para Birimi"] = extract_currency(full_text)
             result["Matrah"] = extract_subtotal(full_text)
+            result["KDV Oranı"] = extract_tax_rate(full_text)
             result["KDV"] = extract_tax(full_text)
             result["Toplam"] = extract_total(full_text)
 
@@ -48,78 +60,110 @@ def extract_date(text: str) -> str:
         match = re.search(pattern, text, re.IGNORECASE)
         if match:
             return match.group(1)
-
-    # fallback: ilk tarihi al
     match = re.search(r'(\d{2}[-/\.]\d{2}[-/\.]\d{4})', text)
     if match:
         return match.group(1)
-
     return "Okunamadı"
 
 
 def extract_invoice_number(text: str) -> str:
     patterns = [
-        # SA42026000275539 gibi: 2-3 harf + 1-2 rakam + 13 rakam toplam 16 karakter
         r'Fatura\s*No[\s:]*([A-Z]{2,3}\d{14,15})',
-        # Standart: 3 harf + 13 rakam
         r'Fatura\s*No[\s:]*([A-Z]{3}\d{13})',
-        # Genel alfanumerik prefix
         r'Fatura\s*No[\s:]*([A-Z0-9]{3,5}\d{10,15})',
     ]
     for pattern in patterns:
         match = re.search(pattern, text, re.IGNORECASE)
         if match:
             return match.group(1)
-
     return "Okunamadı"
 
 
-def extract_tax_id(text: str) -> str:
-    # Önce müşteri TCKN'sini dene (11 hane, "Kimlik Numarası" yakınında)
+def extract_invoice_type(text: str) -> str:
+    match = re.search(r'Fatura\s*Tipi[\s:]*([A-ZÇĞİÖŞÜa-zçğıöşü]+)', text, re.IGNORECASE)
+    if match:
+        val = match.group(1).strip().upper()
+        # Türkçeleştir
+        mapping = {"SATIS": "SATIŞ", "IADE": "İADE", "TEVKIFAT": "TEVKİFAT"}
+        return mapping.get(val, val)
+    return "Okunamadı"
+
+
+def extract_seller_name(lines: list) -> str:
+    """İlk anlamlı satır satıcı adıdır."""
+    skip_keywords = ['tel:', 'faks:', 'web sitesi:', 'vergi', 'mersis', 'ticaret sicil',
+                     'senaryo:', 'e-arşiv', 'özelleştirme']
+    for line in lines:
+        line = line.strip()
+        if not line:
+            continue
+        lower = line.lower()
+        if any(kw in lower for kw in skip_keywords):
+            continue
+        # Adres satırları genelde rakamla veya posta koduyla başlar
+        if re.match(r'^\d{5}', line):
+            continue
+        if len(line) > 5:
+            return line
+    return "Okunamadı"
+
+
+def extract_seller_vkn(text: str) -> str:
+    """Satıcıya ait Vergi Numarası (10 hane)"""
     patterns = [
-        r'Kimlik\s*Numaras[ıi][\s:]*(\d{11})',
-        r'(?:TC|TCKN)[\s:]*(?:Kimlik|No|Numaras[ıi])?[\s:]*(\d{11})',
-        r'T\.C\.?\s*(?:Kimlik)?\s*No[\s:]*(\d{11})',
-        # VKN (10 hane) - müşteri vergi no
-        r'(?:Alıcı|Müşteri)[^\n]*?Vergi[^\n]*?(\d{10})',
+        r'Vergi\s*Numaras[ıi][\s:]*(\d{10})',
         r'V\.K\.N\.?[\s:]*(\d{10})',
     ]
     for pattern in patterns:
         match = re.search(pattern, text, re.IGNORECASE)
         if match:
             return match.group(1)
+    return "Okunamadı"
 
-    # Fallback: herhangi 10-11 haneli sayı
-    match = re.search(r'\b(\d{10,11})\b', text)
-    if match:
-        return match.group(1)
 
+def extract_buyer_tax_id(text: str) -> str:
+    """Alıcıya ait TCKN (11 hane) veya VKN (10 hane)"""
+    patterns = [
+        r'Kimlik\s*Numaras[ıi][\s:]*(\d{11})',
+        r'(?:TC|TCKN)[\s:]*(?:Kimlik|No|Numaras[ıi])?[\s:]*(\d{11})',
+        r'T\.C\.?\s*(?:Kimlik)?\s*No[\s:]*(\d{11})',
+        r'Alıcı[^\n]*?Vergi[^\n]*?(\d{10})',
+    ]
+    for pattern in patterns:
+        match = re.search(pattern, text, re.IGNORECASE)
+        if match:
+            return match.group(1)
     return "Okunamadı"
 
 
 def extract_customer_name(text: str) -> str:
     patterns = [
-        # "Sayın" ile başlayan
         r'Say[ıi]n[\s:]*([A-ZÇĞİÖŞÜ][^\n]{3,80}?)(?:\s+(?:Fatura|Vergi|VKN|Adres|E-Posta|Tel))',
-        # İsim satırı + "Fatura No:" aynı satırda
         r'^([A-ZÇĞİÖŞÜ][a-zA-ZÇĞİÖŞÜçğıöşü\s\.]{5,60}?)\s+Fatura\s+No\s*:',
-        # "Müşteri" veya "ALICI" etiketi
         r'(?:Müşteri|ALICI)\s*(?:Adı|Ünvanı)?[\s:]*([A-ZÇĞİÖŞÜ][A-Za-zÇĞİÖŞÜçğıöşü\s\.&\-]{3,80}?)(?:\s+(?:Vergi|VKN|Adres))',
     ]
     for pattern in patterns:
         match = re.search(pattern, text, re.IGNORECASE | re.MULTILINE)
         if match:
-            name = match.group(1).strip()
-            name = re.sub(r'\s+', ' ', name)
+            name = re.sub(r'\s+', ' ', match.group(1).strip())
             if len(name) > 2:
                 return name
-
     return "Okunamadı"
+
+
+def extract_currency(text: str) -> str:
+    """Para birimi: TL, USD, EUR, GBP"""
+    if re.search(r'\bUSD\b|\$', text):
+        return "USD"
+    if re.search(r'\bEUR\b|€', text):
+        return "EUR"
+    if re.search(r'\bGBP\b|£', text):
+        return "GBP"
+    return "TL"
 
 
 def extract_subtotal(text: str) -> str:
     patterns = [
-        # "Mal / Hizmet Toplam Tutarı:" veya "Mal Hizmet Toplam Tutarı:"
         r'Mal\s*/?\s*Hizmet\s*Toplam\s*Tutar[ıi][\s:]*(\d{1,3}(?:[.,]\d{3})*[.,]\d{2})',
         r'Matrah[\s:]*(\d{1,3}(?:[.,]\d{3})*[.,]\d{2})',
     ]
@@ -127,13 +171,28 @@ def extract_subtotal(text: str) -> str:
         match = re.search(pattern, text, re.IGNORECASE)
         if match:
             return format_amount(match.group(1))
+    return "Okunamadı"
 
+
+def extract_tax_rate(text: str) -> str:
+    """KDV oranı: %20 gibi"""
+    patterns = [
+        r'Hesaplanan\s*KDV\s*\((%\d+|\d+%)\)',
+        r'KDV\s*\((%\d+|\d+%)\)',
+        r'KDV\s+(%\d{1,2}|\d{1,2}%)',
+    ]
+    for pattern in patterns:
+        match = re.search(pattern, text, re.IGNORECASE)
+        if match:
+            rate = match.group(1)
+            if not rate.startswith('%'):
+                rate = '%' + rate
+            return rate
     return "Okunamadı"
 
 
 def extract_tax(text: str) -> str:
     patterns = [
-        # "Hesaplanan KDV(%20):" — parantez içini atla
         r'Hesaplanan\s*KDV\s*(?:\([^)]*\))?\s*[\s:]*(\d{1,3}(?:[.,]\d{3})*[.,]\d{2})',
         r'Toplam\s*KDV\s*(?:\([^)]*\))?\s*[\s:]*(\d{1,3}(?:[.,]\d{3})*[.,]\d{2})',
         r'KDV\s*Tutar[ıi][\s:]*(\d{1,3}(?:[.,]\d{3})*[.,]\d{2})',
@@ -142,7 +201,6 @@ def extract_tax(text: str) -> str:
         match = re.search(pattern, text, re.IGNORECASE)
         if match:
             return format_amount(match.group(1))
-
     return "Okunamadı"
 
 
@@ -156,15 +214,12 @@ def extract_total(text: str) -> str:
         match = re.search(pattern, text, re.IGNORECASE)
         if match:
             return format_amount(match.group(1))
-
     return "Okunamadı"
 
 
 def format_amount(amount: str) -> str:
     """Türkçe format: 1.999,17 → 1999.17"""
-    amount = amount.strip()
-    # Türkçe: nokta=binlik, virgül=ondalık
-    amount = amount.replace('.', '').replace(',', '.')
+    amount = amount.strip().replace('.', '').replace(',', '.')
     try:
         return f"{float(amount):.2f}"
     except Exception:
