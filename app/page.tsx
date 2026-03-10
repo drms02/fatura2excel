@@ -448,25 +448,25 @@ export default function Home() {
               </p>
               <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 mb-6 text-left">
                 <div className="font-semibold text-slate-900 text-lg">Aylık SMMM Paketi</div>
-                <div className="text-sm text-slate-500 mt-1">50 dönüştürme hakkı / ay</div>
+                <div className="text-sm text-slate-500 mt-1">50 kredi / ay</div>
                 <div className="mt-3 flex items-baseline gap-1">
                   <span className="text-3xl font-bold text-slate-900">299</span>
                   <span className="text-slate-500">₺ / ay</span>
                 </div>
                 <ul className="mt-3 space-y-1 text-sm text-slate-600">
-                  <li>✅ 50 toplu fatura dönüştürme</li>
+                  <li>✅ 50 fatura dönüştürme kredisi</li>
                   <li>✅ PDF + XML desteği</li>
                   <li>✅ Excel merge özelliği</li>
                   <li>✅ Öncelikli destek</li>
                 </ul>
               </div>
               <a
-                href={paymentLink}
+                href="https://wa.me/905425313732?text=Merhaba%2C%20Fatura2Excel%20SMMM%20Paketi%20(299%E2%82%BA%2Fay)%20sat%C4%B1n%20almak%20istiyorum."
                 target="_blank"
                 rel="noopener noreferrer"
-                className="block w-full bg-slate-900 text-white py-3 px-6 rounded-xl font-semibold hover:bg-slate-700 transition-colors text-center"
+                className="block w-full bg-[#25D366] text-white py-3 px-6 rounded-xl font-semibold hover:bg-[#1ebe57] transition-colors text-center"
               >
-                Şimdi Satın Al →
+                💬 WhatsApp ile Satın Al
               </a>
               <button
                 onClick={() => setShowPaymentModal(false)}
