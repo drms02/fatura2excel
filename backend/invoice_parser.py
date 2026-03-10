@@ -51,6 +51,11 @@ def extract_invoice_data(pdf_file: BytesIO, filename: str) -> Dict[str, str]:
     return result
 
 
+def normalize_date(raw: str) -> str:
+    """'29 / 01 / 2026', '30-01-2026' → '29.01.2026'"""
+    return re.sub(r'\s*[-/]\s*', '.', raw.strip())
+
+
 def extract_date(text: str) -> str:
     # Handle both "DD.MM.YYYY" and "DD / MM / YYYY" (with optional spaces around separator)
     date_pat = r'(\d{2}\s*[-/\.]\s*\d{2}\s*[-/\.]\s*\d{4})'
@@ -62,11 +67,11 @@ def extract_date(text: str) -> str:
     for pattern in patterns:
         match = re.search(pattern, text, re.IGNORECASE)
         if match:
-            return match.group(1).strip()
+            return normalize_date(match.group(1))
     # Fallback: any date-like pattern
     match = re.search(date_pat, text)
     if match:
-        return match.group(1).strip()
+        return normalize_date(match.group(1))
     return "Okunamadı"
 
 
@@ -149,22 +154,52 @@ def extract_buyer_tax_id(text: str) -> str:
     return "Okunamadı"
 
 
+_NAME_SKIP = {'fatura', 'tarih', 'vergi', 'vkn', 'tckn', 'senaryo', 'e-posta',
+               'tel', 'adres', 'web', 'düzenleme', 'duzenleme', 'ettn', 'mersis',
+               'ödeme', 'odeme', 'siparis', 'belge'}
+
+
+def _is_name_word(w: str) -> bool:
+    """Kelime kişi/kurum adı parçası olabilir mi? (tümü büyük değil, gerçek kelime)"""
+    return bool(w) and len(w) > 1 and w[0].isupper() and not w.isupper()
+
+
 def extract_customer_name(text: str) -> str:
-    patterns = [
-        # "Sayın Adı Soyadı" formatı
-        r'SAY[Iiİı]N\s+([A-ZÇĞİÖŞÜ][A-Za-zÇĞİÖŞÜçğıöşü\s\.]+?)(?:\n|Vergi|VKN|TCKN|E-Posta|Adres)',
+    # 1. Belirli etiket tabanlı kalıplar (en güvenilir)
+    labeled = [
+        r'Nihai\s*T[üu]ketici\s*:?\s*([^\n]+)',
         r'Say[ıi]n\s*:?\s*([A-ZÇĞİÖŞÜ][^\n]{3,80}?)(?:\s+(?:Fatura|Vergi|VKN|Adres|E-Posta|Tel))',
         r'^([A-ZÇĞİÖŞÜ][a-zA-ZÇĞİÖŞÜçğıöşü\s\.]{5,60}?)\s+Fatura\s+No\s*:',
         r'(?:Müşteri|ALICI)\s*(?:Adı|Ünvanı)?\s*:?\s*([A-ZÇĞİÖŞÜ][A-Za-zÇĞİÖŞÜçğıöşü\s\.&\-]{3,80}?)(?:\s+(?:Vergi|VKN|Adres))',
-        # "FATURA NO : XXX\nMuhammed Ensar Durmuş" formatı (ad fatura no sonraki satırda)
-        r'(?:FATURA\s*NO|Fatura\s*No)\s*:?\s*[A-Z0-9]+\s*\n([A-ZÇĞİÖŞÜ][^\n]{3,60})',
+        # FATURA NO sonraki satır — tarih/vergi değilse ad olarak al
+        r'(?:FATURA\s*NO|Fatura\s*No)\s*:?\s*\S+\s*\n([^\n:]{3,60})',
     ]
-    for pattern in patterns:
+    for pattern in labeled:
         match = re.search(pattern, text, re.IGNORECASE | re.MULTILINE)
         if match:
-            name = re.sub(r'\s+', ' ', match.group(1).strip())
-            if len(name) > 2:
-                return name
+            candidate = re.sub(r'\s+', ' ', match.group(1).strip())
+            # İçinde fatura etiket kelimesi varsa atla
+            lower = candidate.lower()
+            if any(kw in lower for kw in _NAME_SKIP):
+                continue
+            if len(candidate) > 2:
+                return candidate
+
+    # 2. "SAYIN" kendi satırında — sonraki satırlarda isim ara (büyük-küçük duyarlı)
+    lines = text.split('\n')
+    for i, line in enumerate(lines):
+        if re.fullmatch(r'SAY[Iiİı]N\s*', line.strip(), re.IGNORECASE):
+            for line2 in lines[i + 1: i + 7]:
+                line2 = line2.strip()
+                if not line2 or ':' in line2:
+                    continue
+                # TitleCase kelimeler: büyük harfle başlar, en az bir küçük harf içerir
+                words = line2.split()
+                name_words = [w for w in words if _is_name_word(w)]
+                if len(name_words) >= 2:
+                    return ' '.join(name_words[:3])
+            break
+
     return "Okunamadı"
 
 
@@ -184,6 +219,8 @@ def extract_subtotal(text: str) -> str:
         # KDV Matrahı (vergi matrahı — indirim sonrası) — önce ara
         r'KDV\s*Matrah[ıi]\s*(\d{1,3}(?:[.,]\d{3})*[.,]\d{2})',
         r'Matrah[ıi]?\s*:?\s*(\d{1,3}(?:[.,]\d{3})*[.,]\d{2})',
+        # Ara Toplam (hizmet faturaları — dolap vb.)
+        r'Ara\s*Toplam\s*(\d{1,3}(?:[.,]\d{3})*[.,]\d{2})',
         # Mal/Hizmet toplam (brüt, indirim öncesi) — son çare
         r'Mal\s*/?\s*Hizmet\s*Toplam\s*Tutar[ıi][\s:]*(\d{1,3}(?:[.,]\d{3})*[.,]\d{2})',
     ]
@@ -196,22 +233,35 @@ def extract_subtotal(text: str) -> str:
 
 def extract_tax_rate(text: str) -> str:
     """KDV oranı — tek veya çok oranlı faturalarda tümünü yakalar."""
-    rates = re.findall(r'Hesaplanan\s*KDV\s*\((%[\d.]+|[\d.]+%)\)', text, re.IGNORECASE)
-    if not rates:
-        rates = re.findall(r'KDV\s*\((%[\d.]+|[\d.]+%)\)', text, re.IGNORECASE)
-    if not rates:
-        rates = re.findall(r'KDV\s+(%\d{1,2}|\d{1,2}%)', text, re.IGNORECASE)
-    if not rates:
-        # "KDV % 20 33,33" formatı
-        rates = [f"%{r}" for r in re.findall(r'\bKDV\s*%\s*(\d{1,2})\b', text, re.IGNORECASE)]
-    if rates:
-        # Normalize: hepsi %XX formatına çek, ondalık kısmı at, tekrarları kaldır
+    raw_rates = []
+
+    # "Hesaplanan KDV(%20)" veya "Hesaplanan KDV(%10.00)"
+    raw_rates += re.findall(r'Hesaplanan\s*KDV\s*\(\s*%?\s*([\d.,]+)\s*%?\s*\)', text, re.IGNORECASE)
+
+    # "KDV ( %20,00 )" formatı (Dolap/83ef2015)
+    if not raw_rates:
+        raw_rates += re.findall(r'KDV\s*\(\s*%\s*([\d.,]+)\s*\)', text, re.IGNORECASE)
+
+    # "KDV (%20)" veya "KDV (20%)"
+    if not raw_rates:
+        raw_rates += re.findall(r'KDV\s*\(\s*%?([\d.,]+)%?\s*\)', text, re.IGNORECASE)
+
+    # "KDV %20" veya "KDV 20%"
+    if not raw_rates:
+        raw_rates += re.findall(r'KDV\s+(%\d{1,2}|\d{1,2}%)', text, re.IGNORECASE)
+
+    # "KDV % 20 33,33" formatı
+    if not raw_rates:
+        raw_rates += [f"{r}" for r in re.findall(r'\bKDV\s*%\s*(\d{1,2})\b', text, re.IGNORECASE)]
+
+    if raw_rates:
         normalized = []
         seen = set()
-        for r in rates:
-            r = r if r.startswith('%') else '%' + r
-            # %10.00 → %10
-            r = re.sub(r'(\d+)\.\d+', r'\1', r)
+        for r in raw_rates:
+            r = str(r).strip().strip('%')
+            # "10,00" → "10" / "10.00" → "10"
+            r = re.sub(r'^(\d+)[.,]\d+$', r'\1', r)
+            r = f"%{r}"
             if r not in seen:
                 seen.add(r)
                 normalized.append(r)
