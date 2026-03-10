@@ -452,13 +452,14 @@ export default function Home() {
               <div className="border border-slate-200 rounded-xl p-4 flex flex-col">
                 <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">Başlangıç</div>
                 <div className="flex items-baseline gap-1 mb-0.5">
-                  <span className="text-2xl font-bold text-slate-900">149</span>
+                  <span className="text-xs line-through text-slate-400 mr-0.5">149₺</span>
+                  <span className="text-2xl font-bold text-slate-900">49</span>
                   <span className="text-slate-500 text-xs">₺</span>
                 </div>
-                <div className="text-xs text-slate-400 mb-3">1,49₺ / kredi</div>
+                <div className="text-xs text-green-600 font-semibold mb-3">%67 indirim · 0,49₺/kredi</div>
                 <div className="text-xl font-bold text-slate-700 mb-0.5">100 kredi</div>
                 <div className="text-xs text-slate-400 mb-4">≈ 100 fatura</div>
-                <a href="https://wa.me/905425313732?text=Merhaba%2C%20Fatura2Excel%20100%20kredi%20(149%E2%82%BA)%20almak%20istiyorum."
+                <a href="https://wa.me/905425313732?text=Merhaba%2C%20Fatura2Excel%20100%20kredi%20(49%E2%82%BA)%20almak%20istiyorum."
                   target="_blank" rel="noopener noreferrer"
                   className="mt-auto block w-full text-center border border-slate-300 text-slate-700 py-2 rounded-lg text-xs font-medium hover:bg-slate-50 transition-colors">
                   💬 Satın Al
@@ -472,14 +473,14 @@ export default function Home() {
                 </div>
                 <div className="text-xs font-semibold text-blue-600 uppercase tracking-wide mb-1">Profesyonel</div>
                 <div className="flex items-baseline gap-1 mb-0.5">
-                  <span className="text-xs line-through text-slate-400">449₺</span>
-                  <span className="text-2xl font-bold text-slate-900">299</span>
+                  <span className="text-xs line-through text-slate-400 mr-0.5">299₺</span>
+                  <span className="text-2xl font-bold text-slate-900">99</span>
                   <span className="text-slate-500 text-xs">₺</span>
                 </div>
-                <div className="text-xs text-blue-600 font-semibold mb-3">1,00₺ / kredi · %33 indirim</div>
+                <div className="text-xs text-blue-600 font-semibold mb-3">%67 indirim · 0,33₺/kredi</div>
                 <div className="text-xl font-bold text-slate-700 mb-0.5">300 kredi</div>
                 <div className="text-xs text-slate-400 mb-4">≈ 300 fatura</div>
-                <a href="https://wa.me/905425313732?text=Merhaba%2C%20Fatura2Excel%20300%20kredi%20(299%E2%82%BA)%20almak%20istiyorum."
+                <a href="https://wa.me/905425313732?text=Merhaba%2C%20Fatura2Excel%20300%20kredi%20(99%E2%82%BA)%20almak%20istiyorum."
                   target="_blank" rel="noopener noreferrer"
                   className="mt-auto block w-full text-center bg-blue-500 text-white py-2 rounded-lg text-xs font-semibold hover:bg-blue-600 transition-colors">
                   💬 Satın Al
@@ -490,13 +491,14 @@ export default function Home() {
               <div className="border border-slate-200 rounded-xl p-4 flex flex-col">
                 <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">İleri</div>
                 <div className="flex items-baseline gap-1 mb-0.5">
-                  <span className="text-2xl font-bold text-slate-900">449</span>
+                  <span className="text-xs line-through text-slate-400 mr-0.5">399₺</span>
+                  <span className="text-2xl font-bold text-slate-900">149</span>
                   <span className="text-slate-500 text-xs">₺</span>
                 </div>
-                <div className="text-xs text-slate-400 mb-3">0,90₺ / kredi</div>
+                <div className="text-xs text-green-600 font-semibold mb-3">%63 indirim · 0,30₺/kredi</div>
                 <div className="text-xl font-bold text-slate-700 mb-0.5">500 kredi</div>
                 <div className="text-xs text-slate-400 mb-4">≈ 500 fatura</div>
-                <a href="https://wa.me/905425313732?text=Merhaba%2C%20Fatura2Excel%20500%20kredi%20(449%E2%82%BA)%20almak%20istiyorum."
+                <a href="https://wa.me/905425313732?text=Merhaba%2C%20Fatura2Excel%20500%20kredi%20(149%E2%82%BA)%20almak%20istiyorum."
                   target="_blank" rel="noopener noreferrer"
                   className="mt-auto block w-full text-center border border-slate-300 text-slate-700 py-2 rounded-lg text-xs font-medium hover:bg-slate-50 transition-colors">
                   💬 Satın Al
@@ -507,13 +509,14 @@ export default function Home() {
               <div className="border border-slate-200 rounded-xl p-4 flex flex-col bg-slate-900">
                 <div className="text-xs font-semibold text-amber-400 uppercase tracking-wide mb-1">🔥 En İyi Değer</div>
                 <div className="flex items-baseline gap-1 mb-0.5">
-                  <span className="text-2xl font-bold text-white">799</span>
+                  <span className="text-xs line-through text-slate-500 mr-0.5">699₺</span>
+                  <span className="text-2xl font-bold text-white">249</span>
                   <span className="text-slate-400 text-xs">₺</span>
                 </div>
-                <div className="text-xs text-amber-400 font-semibold mb-3">0,80₺ / kredi · %46 tasarruf</div>
+                <div className="text-xs text-amber-400 font-semibold mb-3">%64 indirim · 0,25₺/kredi</div>
                 <div className="text-xl font-bold text-white mb-0.5">1.000 kredi</div>
                 <div className="text-xs text-slate-400 mb-4">≈ 1.000 fatura</div>
-                <a href="https://wa.me/905425313732?text=Merhaba%2C%20Fatura2Excel%201000%20kredi%20(799%E2%82%BA)%20almak%20istiyorum."
+                <a href="https://wa.me/905425313732?text=Merhaba%2C%20Fatura2Excel%201000%20kredi%20(249%E2%82%BA)%20almak%20istiyorum."
                   target="_blank" rel="noopener noreferrer"
                   className="mt-auto block w-full text-center bg-amber-400 text-slate-900 py-2 rounded-lg text-xs font-semibold hover:bg-amber-300 transition-colors">
                   💬 Satın Al
@@ -524,13 +527,14 @@ export default function Home() {
               <div className="border border-slate-200 rounded-xl p-4 flex flex-col">
                 <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">Büro</div>
                 <div className="flex items-baseline gap-1 mb-0.5">
-                  <span className="text-2xl font-bold text-slate-900">1.099</span>
+                  <span className="text-xs line-through text-slate-400 mr-0.5">999₺</span>
+                  <span className="text-2xl font-bold text-slate-900">349</span>
                   <span className="text-slate-500 text-xs">₺</span>
                 </div>
-                <div className="text-xs text-slate-400 mb-3">0,73₺ / kredi</div>
+                <div className="text-xs text-green-600 font-semibold mb-3">%65 indirim · 0,23₺/kredi</div>
                 <div className="text-xl font-bold text-slate-700 mb-0.5">1.500 kredi</div>
                 <div className="text-xs text-slate-400 mb-4">≈ 1.500 fatura</div>
-                <a href="https://wa.me/905425313732?text=Merhaba%2C%20Fatura2Excel%201500%20kredi%20(1099%E2%82%BA)%20almak%20istiyorum."
+                <a href="https://wa.me/905425313732?text=Merhaba%2C%20Fatura2Excel%201500%20kredi%20(349%E2%82%BA)%20almak%20istiyorum."
                   target="_blank" rel="noopener noreferrer"
                   className="mt-auto block w-full text-center border border-slate-300 text-slate-700 py-2 rounded-lg text-xs font-medium hover:bg-slate-50 transition-colors">
                   💬 Satın Al
@@ -541,13 +545,14 @@ export default function Home() {
               <div className="border border-purple-300 rounded-xl p-4 flex flex-col bg-gradient-to-br from-purple-50 to-slate-50">
                 <div className="text-xs font-semibold text-purple-600 uppercase tracking-wide mb-1">👑 Kurumsal</div>
                 <div className="flex items-baseline gap-1 mb-0.5">
-                  <span className="text-2xl font-bold text-slate-900">2.999</span>
+                  <span className="text-xs line-through text-slate-400 mr-0.5">2.999₺</span>
+                  <span className="text-2xl font-bold text-slate-900">999</span>
                   <span className="text-slate-500 text-xs">₺</span>
                 </div>
-                <div className="text-xs text-purple-600 font-semibold mb-3">0,60₺ / kredi · %60 tasarruf</div>
+                <div className="text-xs text-purple-600 font-semibold mb-3">%67 indirim · 0,20₺/kredi</div>
                 <div className="text-xl font-bold text-slate-700 mb-0.5">5.000 kredi</div>
                 <div className="text-xs text-slate-400 mb-4">≈ 5.000 fatura</div>
-                <a href="https://wa.me/905425313732?text=Merhaba%2C%20Fatura2Excel%205000%20kredi%20(2999%E2%82%BA)%20almak%20istiyorum."
+                <a href="https://wa.me/905425313732?text=Merhaba%2C%20Fatura2Excel%205000%20kredi%20(999%E2%82%BA)%20almak%20istiyorum."
                   target="_blank" rel="noopener noreferrer"
                   className="mt-auto block w-full text-center bg-purple-600 text-white py-2 rounded-lg text-xs font-semibold hover:bg-purple-700 transition-colors">
                   💬 Satın Al
