@@ -430,51 +430,112 @@ export default function Home() {
         </div>
       </div>
 
-      {/* ——— Ödeme Modalı ——— */}
+      {/* ——— Fiyatlandırma Modalı ——— */}
       {showPaymentModal && (
         <div
-          className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4"
+          className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 overflow-y-auto"
           onClick={() => setShowPaymentModal(false)}
         >
           <div
-            className="bg-white rounded-2xl p-8 max-w-sm w-full shadow-2xl"
+            className="bg-white rounded-2xl p-6 max-w-2xl w-full shadow-2xl my-4"
             onClick={e => e.stopPropagation()}
           >
-            <div className="text-center">
-              <div className="text-5xl mb-4">🎉</div>
-              <h2 className="text-2xl font-bold text-slate-900 mb-2">Ücretsiz krediniz bitti!</h2>
-              <p className="text-slate-600 mb-6 text-sm">
-                Aylık SMMM paketine geçerek dönüştürmeye devam edin.
-              </p>
-              <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 mb-6 text-left">
-                <div className="font-semibold text-slate-900 text-lg">Aylık SMMM Paketi</div>
-                <div className="text-sm text-slate-500 mt-1">50 kredi / ay</div>
-                <div className="mt-3 flex items-baseline gap-1">
-                  <span className="text-3xl font-bold text-slate-900">299</span>
-                  <span className="text-slate-500">₺ / ay</span>
-                </div>
-                <ul className="mt-3 space-y-1 text-sm text-slate-600">
-                  <li>✅ 50 fatura dönüştürme kredisi</li>
-                  <li>✅ PDF + XML desteği</li>
-                  <li>✅ Excel merge özelliği</li>
-                  <li>✅ Öncelikli destek</li>
-                </ul>
-              </div>
-              <a
-                href="https://wa.me/905425313732?text=Merhaba%2C%20Fatura2Excel%20SMMM%20Paketi%20(299%E2%82%BA%2Fay)%20sat%C4%B1n%20almak%20istiyorum."
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block w-full bg-[#25D366] text-white py-3 px-6 rounded-xl font-semibold hover:bg-[#1ebe57] transition-colors text-center"
-              >
-                💬 WhatsApp ile Satın Al
-              </a>
-              <button
-                onClick={() => setShowPaymentModal(false)}
-                className="mt-4 text-sm text-slate-400 hover:text-slate-600 transition-colors"
-              >
-                Şimdi değil
-              </button>
+            <div className="text-center mb-6">
+              <div className="text-4xl mb-2">🚀</div>
+              <h2 className="text-2xl font-bold text-slate-900">Kredinizi Yükleyin</h2>
+              <p className="text-slate-500 text-sm mt-1">Bir kerelik satın alma — abonelik yok, istediğinde al</p>
             </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+
+              {/* Başlangıç — decoy */}
+              <div className="border border-slate-200 rounded-xl p-5 flex flex-col">
+                <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-1">Başlangıç</div>
+                <div className="flex items-baseline gap-1 mb-1">
+                  <span className="text-3xl font-bold text-slate-900">59</span>
+                  <span className="text-slate-500 text-sm">₺</span>
+                </div>
+                <div className="text-xs text-slate-400 mb-4">2,95₺ / kredi</div>
+                <div className="text-2xl font-bold text-slate-700 mb-1">20 kredi</div>
+                <div className="text-xs text-slate-500 mb-4">≈ 20 fatura</div>
+                <ul className="text-sm text-slate-600 space-y-1 mb-6 flex-1">
+                  <li>✓ PDF + XML</li>
+                  <li>✓ Excel çıktı</li>
+                  <li className="text-slate-300">✗ Öncelikli destek</li>
+                </ul>
+                <a
+                  href="https://wa.me/905425313732?text=Merhaba%2C%20Fatura2Excel%20Ba%C5%9Flang%C4%B1%C3%A7%20paketi%20(20%20kredi%20-%2059%E2%82%BA)%20almak%20istiyorum."
+                  target="_blank" rel="noopener noreferrer"
+                  className="block w-full text-center border border-slate-300 text-slate-700 py-2 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors"
+                >
+                  💬 Satın Al
+                </a>
+              </div>
+
+              {/* Profesyonel — hedef paket */}
+              <div className="border-2 border-blue-500 rounded-xl p-5 flex flex-col relative shadow-lg">
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-500 text-white text-xs font-bold px-3 py-1 rounded-full">
+                  ⭐ EN POPÜLER
+                </div>
+                <div className="text-sm font-semibold text-blue-600 uppercase tracking-wide mb-1">Profesyonel</div>
+                <div className="flex items-baseline gap-1 mb-1">
+                  <span className="text-sm line-through text-slate-400 mr-1">299₺</span>
+                  <span className="text-3xl font-bold text-slate-900">149</span>
+                  <span className="text-slate-500 text-sm">₺</span>
+                </div>
+                <div className="text-xs text-blue-600 font-semibold mb-4">1,49₺ / kredi · %50 tasarruf</div>
+                <div className="text-2xl font-bold text-slate-700 mb-1">100 kredi</div>
+                <div className="text-xs text-slate-500 mb-4">≈ 100 fatura</div>
+                <ul className="text-sm text-slate-600 space-y-1 mb-6 flex-1">
+                  <li>✓ PDF + XML</li>
+                  <li>✓ Excel çıktı</li>
+                  <li>✓ Öncelikli destek</li>
+                </ul>
+                <a
+                  href="https://wa.me/905425313732?text=Merhaba%2C%20Fatura2Excel%20Profesyonel%20paketi%20(100%20kredi%20-%20149%E2%82%BA)%20almak%20istiyorum."
+                  target="_blank" rel="noopener noreferrer"
+                  className="block w-full text-center bg-blue-500 text-white py-2 rounded-lg text-sm font-semibold hover:bg-blue-600 transition-colors"
+                >
+                  💬 Satın Al
+                </a>
+              </div>
+
+              {/* SMMM Pro — değer paketi */}
+              <div className="border border-slate-200 rounded-xl p-5 flex flex-col bg-slate-900">
+                <div className="text-sm font-semibold text-amber-400 uppercase tracking-wide mb-1">SMMM Pro</div>
+                <div className="flex items-baseline gap-1 mb-1">
+                  <span className="text-3xl font-bold text-white">299</span>
+                  <span className="text-slate-400 text-sm">₺</span>
+                </div>
+                <div className="text-xs text-amber-400 font-semibold mb-4">1,00₺ / kredi · %66 tasarruf</div>
+                <div className="text-2xl font-bold text-white mb-1">300 kredi</div>
+                <div className="text-xs text-slate-400 mb-4">≈ 300 fatura</div>
+                <ul className="text-sm text-slate-300 space-y-1 mb-6 flex-1">
+                  <li>✓ PDF + XML</li>
+                  <li>✓ Excel çıktı</li>
+                  <li>✓ Öncelikli destek</li>
+                  <li className="text-amber-400 font-medium">✓ En düşük birim fiyat</li>
+                </ul>
+                <a
+                  href="https://wa.me/905425313732?text=Merhaba%2C%20Fatura2Excel%20SMMM%20Pro%20paketi%20(300%20kredi%20-%20299%E2%82%BA)%20almak%20istiyorum."
+                  target="_blank" rel="noopener noreferrer"
+                  className="block w-full text-center bg-amber-400 text-slate-900 py-2 rounded-lg text-sm font-semibold hover:bg-amber-300 transition-colors"
+                >
+                  💬 Satın Al
+                </a>
+              </div>
+
+            </div>
+
+            <p className="text-center text-xs text-slate-400 mb-3">
+              WhatsApp&apos;a yazın → IBAN ile ödeme yapın → kredi anında yüklenir
+            </p>
+            <button
+              onClick={() => setShowPaymentModal(false)}
+              className="block mx-auto text-sm text-slate-400 hover:text-slate-600 transition-colors"
+            >
+              Şimdi değil
+            </button>
           </div>
         </div>
       )}
