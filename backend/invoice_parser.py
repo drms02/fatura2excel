@@ -175,32 +175,46 @@ def extract_subtotal(text: str) -> str:
 
 
 def extract_tax_rate(text: str) -> str:
-    """KDV oranı: %20 gibi"""
-    patterns = [
-        r'Hesaplanan\s*KDV\s*\((%\d+|\d+%)\)',
-        r'KDV\s*\((%\d+|\d+%)\)',
-        r'KDV\s+(%\d{1,2}|\d{1,2}%)',
-    ]
-    for pattern in patterns:
-        match = re.search(pattern, text, re.IGNORECASE)
-        if match:
-            rate = match.group(1)
-            if not rate.startswith('%'):
-                rate = '%' + rate
-            return rate
+    """KDV oranı — tek veya çok oranlı faturalarda tümünü yakalar."""
+    rates = re.findall(r'Hesaplanan\s*KDV\s*\((%\d+|\d+%)\)', text, re.IGNORECASE)
+    if not rates:
+        rates = re.findall(r'KDV\s*\((%\d+|\d+%)\)', text, re.IGNORECASE)
+    if not rates:
+        rates = re.findall(r'KDV\s+(%\d{1,2}|\d{1,2}%)', text, re.IGNORECASE)
+    if rates:
+        # Normalize: hepsi %XX formatına çek, tekrarları kaldır
+        normalized = []
+        seen = set()
+        for r in rates:
+            r = r if r.startswith('%') else '%' + r
+            if r not in seen:
+                seen.add(r)
+                normalized.append(r)
+        return ", ".join(normalized)
     return "Okunamadı"
 
 
 def extract_tax(text: str) -> str:
-    patterns = [
+    """KDV tutarı — çok oranlı faturalarda tüm KDV'leri toplar."""
+    # Önce genel toplam KDV satırını ara
+    total_match = re.search(
+        r'(?:Toplam\s*KDV|KDV\s*Tutar[ıi])[\s:]*(\d{1,3}(?:[.,]\d{3})*[.,]\d{2})',
+        text, re.IGNORECASE
+    )
+    if total_match:
+        return format_amount(total_match.group(1))
+
+    # Çok oranlı: tüm "Hesaplanan KDV(...): X,XX" satırlarını topla
+    amounts = re.findall(
         r'Hesaplanan\s*KDV\s*(?:\([^)]*\))?\s*[\s:]*(\d{1,3}(?:[.,]\d{3})*[.,]\d{2})',
-        r'Toplam\s*KDV\s*(?:\([^)]*\))?\s*[\s:]*(\d{1,3}(?:[.,]\d{3})*[.,]\d{2})',
-        r'KDV\s*Tutar[ıi][\s:]*(\d{1,3}(?:[.,]\d{3})*[.,]\d{2})',
-    ]
-    for pattern in patterns:
-        match = re.search(pattern, text, re.IGNORECASE)
-        if match:
-            return format_amount(match.group(1))
+        text, re.IGNORECASE
+    )
+    if amounts:
+        total = sum(
+            float(a.replace('.', '').replace(',', '.')) for a in amounts
+        )
+        return f"{total:.2f}"
+
     return "Okunamadı"
 
 
