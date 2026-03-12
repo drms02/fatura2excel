@@ -427,6 +427,133 @@ export default function Home() {
               <p className="text-sm text-slate-600">Düzenli Excel formatında raporunuzu hemen alın</p>
             </Card>
           </div>
+
+          {/* ——— Fiyatlandırma Bölümü ——— */}
+          <div className="mt-16">
+            <div className="text-center mb-8">
+              <h2 className="text-2xl font-bold text-slate-900 mb-2">Fiyatlandırma</h2>
+              <p className="text-slate-500 text-sm">Bir kerelik satın alma — abonelik yok, istediğinde al</p>
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+
+              {/* 100 kredi */}
+              <div className="border border-slate-200 rounded-xl p-4 flex flex-col bg-white shadow-sm">
+                <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">Başlangıç</div>
+                <div className="flex items-baseline gap-1 mb-0.5">
+                  <span className="text-xs line-through text-slate-400 mr-0.5">149₺</span>
+                  <span className="text-2xl font-bold text-slate-900">49</span>
+                  <span className="text-slate-500 text-xs">₺</span>
+                </div>
+                <div className="text-xs text-green-600 font-semibold mb-3">%67 indirim · 0,49₺/kredi</div>
+                <div className="text-xl font-bold text-slate-700 mb-0.5">100 kredi</div>
+                <div className="text-xs text-slate-400 mb-4">≈ 100 fatura</div>
+                <a href="https://wa.me/905425313732?text=Merhaba%2C%20Fatura2Excel%20100%20kredi%20(49%E2%82%BA)%20almak%20istiyorum."
+                  target="_blank" rel="noopener noreferrer"
+                  className="mt-auto block w-full text-center border border-slate-300 text-slate-700 py-2 rounded-lg text-xs font-medium hover:bg-slate-50 transition-colors">
+                  💬 Satın Al
+                </a>
+              </div>
+
+              {/* 300 kredi — EN POPÜLER */}
+              <div className="border-2 border-blue-500 rounded-xl p-4 flex flex-col relative shadow-md bg-white">
+                <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-blue-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap">
+                  ⭐ EN POPÜLER
+                </div>
+                <div className="text-xs font-semibold text-blue-600 uppercase tracking-wide mb-1">Profesyonel</div>
+                <div className="flex items-baseline gap-1 mb-0.5">
+                  <span className="text-xs line-through text-slate-400 mr-0.5">299₺</span>
+                  <span className="text-2xl font-bold text-slate-900">99</span>
+                  <span className="text-slate-500 text-xs">₺</span>
+                </div>
+                <div className="text-xs text-blue-600 font-semibold mb-3">%67 indirim · 0,33₺/kredi</div>
+                <div className="text-xl font-bold text-slate-700 mb-0.5">300 kredi</div>
+                <div className="text-xs text-slate-400 mb-4">≈ 300 fatura</div>
+                <a href="https://wa.me/905425313732?text=Merhaba%2C%20Fatura2Excel%20300%20kredi%20(99%E2%82%BA)%20almak%20istiyorum."
+                  target="_blank" rel="noopener noreferrer"
+                  className="mt-auto block w-full text-center bg-blue-500 text-white py-2 rounded-lg text-xs font-semibold hover:bg-blue-600 transition-colors">
+                  💬 Satın Al
+                </a>
+              </div>
+
+              {/* 500 kredi */}
+              <div className="border border-slate-200 rounded-xl p-4 flex flex-col bg-white shadow-sm">
+                <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">İleri</div>
+                <div className="flex items-baseline gap-1 mb-0.5">
+                  <span className="text-xs line-through text-slate-400 mr-0.5">399₺</span>
+                  <span className="text-2xl font-bold text-slate-900">149</span>
+                  <span className="text-slate-500 text-xs">₺</span>
+                </div>
+                <div className="text-xs text-green-600 font-semibold mb-3">%63 indirim · 0,30₺/kredi</div>
+                <div className="text-xl font-bold text-slate-700 mb-0.5">500 kredi</div>
+                <div className="text-xs text-slate-400 mb-4">≈ 500 fatura</div>
+                <a href="https://wa.me/905425313732?text=Merhaba%2C%20Fatura2Excel%20500%20kredi%20(149%E2%82%BA)%20almak%20istiyorum."
+                  target="_blank" rel="noopener noreferrer"
+                  className="mt-auto block w-full text-center border border-slate-300 text-slate-700 py-2 rounded-lg text-xs font-medium hover:bg-slate-50 transition-colors">
+                  💬 Satın Al
+                </a>
+              </div>
+
+              {/* 1000 kredi — EN İYİ DEĞER */}
+              <div className="border border-slate-200 rounded-xl p-4 flex flex-col bg-slate-900 shadow-sm">
+                <div className="text-xs font-semibold text-amber-400 uppercase tracking-wide mb-1">🔥 En İyi Değer</div>
+                <div className="flex items-baseline gap-1 mb-0.5">
+                  <span className="text-xs line-through text-slate-500 mr-0.5">699₺</span>
+                  <span className="text-2xl font-bold text-white">249</span>
+                  <span className="text-slate-400 text-xs">₺</span>
+                </div>
+                <div className="text-xs text-amber-400 font-semibold mb-3">%64 indirim · 0,25₺/kredi</div>
+                <div className="text-xl font-bold text-white mb-0.5">1.000 kredi</div>
+                <div className="text-xs text-slate-400 mb-4">≈ 1.000 fatura</div>
+                <a href="https://wa.me/905425313732?text=Merhaba%2C%20Fatura2Excel%201000%20kredi%20(249%E2%82%BA)%20almak%20istiyorum."
+                  target="_blank" rel="noopener noreferrer"
+                  className="mt-auto block w-full text-center bg-amber-400 text-slate-900 py-2 rounded-lg text-xs font-semibold hover:bg-amber-300 transition-colors">
+                  💬 Satın Al
+                </a>
+              </div>
+
+              {/* 1500 kredi */}
+              <div className="border border-slate-200 rounded-xl p-4 flex flex-col bg-white shadow-sm">
+                <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">Büro</div>
+                <div className="flex items-baseline gap-1 mb-0.5">
+                  <span className="text-xs line-through text-slate-400 mr-0.5">999₺</span>
+                  <span className="text-2xl font-bold text-slate-900">349</span>
+                  <span className="text-slate-500 text-xs">₺</span>
+                </div>
+                <div className="text-xs text-green-600 font-semibold mb-3">%65 indirim · 0,23₺/kredi</div>
+                <div className="text-xl font-bold text-slate-700 mb-0.5">1.500 kredi</div>
+                <div className="text-xs text-slate-400 mb-4">≈ 1.500 fatura</div>
+                <a href="https://wa.me/905425313732?text=Merhaba%2C%20Fatura2Excel%201500%20kredi%20(349%E2%82%BA)%20almak%20istiyorum."
+                  target="_blank" rel="noopener noreferrer"
+                  className="mt-auto block w-full text-center border border-slate-300 text-slate-700 py-2 rounded-lg text-xs font-medium hover:bg-slate-50 transition-colors">
+                  💬 Satın Al
+                </a>
+              </div>
+
+              {/* 5000 kredi — Kurumsal */}
+              <div className="border border-purple-300 rounded-xl p-4 flex flex-col bg-gradient-to-br from-purple-50 to-slate-50 shadow-sm">
+                <div className="text-xs font-semibold text-purple-600 uppercase tracking-wide mb-1">👑 Kurumsal</div>
+                <div className="flex items-baseline gap-1 mb-0.5">
+                  <span className="text-xs line-through text-slate-400 mr-0.5">2.999₺</span>
+                  <span className="text-2xl font-bold text-slate-900">999</span>
+                  <span className="text-slate-500 text-xs">₺</span>
+                </div>
+                <div className="text-xs text-purple-600 font-semibold mb-3">%67 indirim · 0,20₺/kredi</div>
+                <div className="text-xl font-bold text-slate-700 mb-0.5">5.000 kredi</div>
+                <div className="text-xs text-slate-400 mb-4">≈ 5.000 fatura</div>
+                <a href="https://wa.me/905425313732?text=Merhaba%2C%20Fatura2Excel%205000%20kredi%20(999%E2%82%BA)%20almak%20istiyorum."
+                  target="_blank" rel="noopener noreferrer"
+                  className="mt-auto block w-full text-center bg-purple-600 text-white py-2 rounded-lg text-xs font-semibold hover:bg-purple-700 transition-colors">
+                  💬 Satın Al
+                </a>
+              </div>
+
+            </div>
+            <p className="text-center text-xs text-slate-400 mt-4">
+              WhatsApp&apos;a yazın → IBAN ile ödeme yapın → kredi anında yüklenir
+            </p>
+          </div>
+
         </div>
       </div>
 
