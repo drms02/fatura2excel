@@ -234,8 +234,9 @@ export default function Home() {
               </div>
               <h1 className="text-4xl font-bold text-slate-900 mb-3">Fatura2Excel</h1>
               <p className="text-lg text-slate-600">
-                GİB E-Arşiv faturalarınızı saniyeler içinde Excel&apos;e dönüştürün
+                E-Arşiv fatura Excel&apos;e dönüştür — PDF &amp; XML, saniyeler içinde
               </p>
+              <p className="text-sm text-slate-400 mt-1">GİB e-Arşiv ve e-Fatura XML desteklenir</p>
             </div>
 
             {/* Kredi badge + kullanıcı */}
@@ -390,10 +391,14 @@ export default function Home() {
 
             {/* Giriş yapılmamış uyarı */}
             {isLoaded && !isSignedIn && (
-              <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg text-center">
-                <p className="text-blue-700 text-sm">
-                  Dönüştürmek için Google ile giriş yapmanız gerekiyor.{' '}
-                  <span className="font-semibold">5 ücretsiz dönüştürme</span> hakkı tanınacak.
+              <div className="mt-6 p-3 bg-slate-50 border border-slate-200 rounded-lg text-center">
+                <p className="text-slate-600 text-sm">
+                  Dönüştürmek için giriş yapın —{' '}
+                  <SignInButton mode="modal">
+                    <span className="text-green-700 font-semibold underline cursor-pointer hover:text-green-800">
+                      ücretsiz başla (5 kredi hediye)
+                    </span>
+                  </SignInButton>
                 </p>
               </div>
             )}
@@ -402,6 +407,30 @@ export default function Home() {
               {renderConvertButton()}
             </div>
           </Card>
+
+          {/* ——— Ücretsiz Banner ——— */}
+          <div className="mt-8 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-2xl px-6 py-5 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="text-3xl">🎁</div>
+              <div>
+                <p className="font-bold text-green-800 text-lg leading-tight">İlk 5 faturanız tamamen ücretsiz!</p>
+                <p className="text-green-700 text-sm mt-0.5">Kredi kartı gerekmez — hemen deneyin, beğenirseniz devam edin.</p>
+              </div>
+            </div>
+            <div className="shrink-0">
+              {!isSignedIn ? (
+                <SignInButton mode="modal">
+                  <button className="bg-green-600 hover:bg-green-700 text-white font-semibold px-5 py-2.5 rounded-xl text-sm transition-colors cursor-pointer">
+                    Ücretsiz Başla →
+                  </button>
+                </SignInButton>
+              ) : (
+                <span className="bg-green-600 text-white font-semibold px-5 py-2.5 rounded-xl text-sm">
+                  ✓ Hesabınız aktif
+                </span>
+              )}
+            </div>
+          </div>
 
           {/* Özellik kartları */}
           <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
